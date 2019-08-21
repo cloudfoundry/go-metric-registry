@@ -17,7 +17,6 @@ import (
 // provide a server on a Prometheus-formatted endpoint.
 type Registry struct {
 	port        string
-	defaultTags map[string]string
 	loggr       *log.Logger
 	registerer  prometheus.Registerer
 }
@@ -41,7 +40,6 @@ type Gauge interface {
 func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 	pr := &Registry{
 		loggr:       logger,
-		defaultTags: make(map[string]string),
 	}
 
 	for _, o := range opts {
@@ -49,14 +47,13 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 	}
 
 	registry := prometheus.NewRegistry()
-	registerer := prometheus.WrapRegistererWith(pr.defaultTags, registry)
-	pr.registerer = registerer
+	pr.registerer = registry
 
-	registerer.MustRegister(prometheus.NewGoCollector())
-	registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	pr.registerer.MustRegister(prometheus.NewGoCollector())
+	pr.registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 
 	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{
-		Registry: registerer,
+		Registry: pr.registerer,
 	}))
 	return pr
 }
@@ -139,7 +136,7 @@ func (p *Registry) start(port int) {
 	if err != nil {
 		p.loggr.Fatalf("Unable to setup metrics endpoint (%s): %s", addr, err)
 	}
-	p.loggr.Printf("Metrics endpoint is listening on %s", lis.Addr().String())
+	p.loggr.Printf("Metrics endpoint is listening on %s/metrics", lis.Addr().String())
 
 	parts := strings.Split(lis.Addr().String(), ":")
 	p.port = parts[len(parts)-1]
@@ -182,9 +179,9 @@ func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
 type MetricOption func(o *prometheus.Opts)
 
 // Add these tags to the metrics
-func WithMetricTags(tags map[string]string) MetricOption {
+func WithMetricLabels(labels map[string]string) MetricOption {
 	return func(o *prometheus.Opts) {
-		for k, v := range tags {
+		for k, v := range labels {
 			o.ConstLabels[k] = v
 		}
 	}

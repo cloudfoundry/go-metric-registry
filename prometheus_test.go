@@ -27,9 +27,9 @@ var _ = Describe("PrometheusMetrics", func() {
 	It("serves metrics on a prometheus endpoint", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
-		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricTags(map[string]string{"foo": "bar"}), )
+		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}), )
 
-		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricTags(map[string]string{"bar": "baz"}), )
+		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}), )
 
 		c.Add(10)
 		g.Set(10)
@@ -87,7 +87,7 @@ var _ = Describe("PrometheusMetrics", func() {
 				metrics.WithTLSServer(0, certFile, keyFile, caFile),
 			)
 
-			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricTags(map[string]string{"bar": "baz"}), )
+			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}), )
 			g.Set(10)
 
 			Eventually(func() string {
