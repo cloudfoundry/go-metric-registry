@@ -16,9 +16,9 @@ import (
 // The Registry keeps track of registered counters and gauges. Optionally, it can
 // provide a server on a Prometheus-formatted endpoint.
 type Registry struct {
-	port        string
-	loggr       *log.Logger
-	registerer  prometheus.Registerer
+	port       string
+	loggr      *log.Logger
+	registerer prometheus.Registerer
 }
 
 // A cumulative metric that represents a single monotonically increasing counter
@@ -33,13 +33,18 @@ type Gauge interface {
 	Set(float64)
 }
 
+// A histogram counts observations into buckets.
+type Histogram interface {
+	Observe(float64)
+}
+
 // Registry will register the metrics route with the default http mux but will not
 // start an http server. This is intentional so that we can combine metrics with
 // other things like pprof into one server. To start a server
 // just for metrics, use the WithServer RegistryOption
 func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 	pr := &Registry{
-		loggr:       logger,
+		loggr: logger,
 	}
 
 	for _, o := range opts {
@@ -61,7 +66,7 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 // Creates new counter. When a duplicate is registered, the Registry will return
 // the previously created metric.
 func (p *Registry) NewCounter(name, helpText string, opts ...MetricOption) Counter {
-	opt := p.toPromOpt(name, helpText, opts...)
+	opt := toPromOpt(name, helpText, opts...)
 	c := prometheus.NewCounter(prometheus.CounterOpts(opt))
 	return p.registerCollector(name, c).(Counter)
 }
@@ -69,9 +74,16 @@ func (p *Registry) NewCounter(name, helpText string, opts ...MetricOption) Count
 // Creates new gauge. When a duplicate is registered, the Registry will return
 // the previously created metric.
 func (p *Registry) NewGauge(name, helpText string, opts ...MetricOption) Gauge {
-	opt := p.toPromOpt(name, helpText, opts...)
+	opt := toPromOpt(name, helpText, opts...)
 	g := prometheus.NewGauge(prometheus.GaugeOpts(opt))
 	return p.registerCollector(name, g).(Gauge)
+}
+
+// Creates new histogram. When a duplicate is registered, the Registry will return
+// the previously created metric.
+func (p *Registry) NewHistogram(name, helpText string, buckets []float64, opts ...MetricOption) Histogram {
+	h := prometheus.NewHistogram(toHistogramOpts(name, helpText, buckets, opts...))
+	return p.registerCollector(name, h).(Histogram)
 }
 
 func (p *Registry) registerCollector(name string, c prometheus.Collector) prometheus.Collector {
@@ -93,7 +105,7 @@ func (p *Registry) Port() string {
 	return fmt.Sprint(p.port)
 }
 
-func (p *Registry) toPromOpt(name, helpText string, mOpts ...MetricOption) prometheus.Opts {
+func toPromOpt(name, helpText string, mOpts ...MetricOption) prometheus.Opts {
 	opt := prometheus.Opts{
 		Name:        name,
 		Help:        helpText,
@@ -105,6 +117,19 @@ func (p *Registry) toPromOpt(name, helpText string, mOpts ...MetricOption) prome
 	}
 
 	return opt
+}
+
+func toHistogramOpts(name, helpText string, buckets []float64, mOpts ...MetricOption) prometheus.HistogramOpts {
+	promOpt := toPromOpt(name, helpText, mOpts...)
+
+	return prometheus.HistogramOpts{
+		Namespace:   promOpt.Namespace,
+		Subsystem:   promOpt.Subsystem,
+		Name:        promOpt.Name,
+		Help:        promOpt.Help,
+		ConstLabels: promOpt.ConstLabels,
+		Buckets:     buckets,
+	}
 }
 
 // Options for registry initialization
