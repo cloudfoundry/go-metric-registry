@@ -17,13 +17,6 @@ var _ = Describe("PrometheusMetrics", func() {
 		l = log.New(GinkgoWriter, "", log.LstdFlags)
 	)
 
-	BeforeEach(func() {
-		// This is needed because the prom registry will register
-		// the /metrics route with the default http mux which is
-		// global
-		http.DefaultServeMux = new(http.ServeMux)
-	})
-
 	It("serves metrics on a prometheus endpoint", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
