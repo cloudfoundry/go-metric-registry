@@ -10,3 +10,6 @@ This repository should be imported as:
 `import loggregator "code.cloudfoundry.org/go-metric-registry"`
 
 An example app can be referenced in [the examples directory](https://github.com/cloudfoundry/go-metric-registry/blob/master/examples/main.go).
+
+[slack-badge]:              https://slack.cloudfoundry.org/badge.svg
+[loggregator-slack]:        https://cloudfoundry.slack.com/archives/loggregator
