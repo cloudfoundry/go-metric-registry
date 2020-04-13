@@ -1,15 +1,16 @@
 package metrics_test
 
 import (
-	metrics "code.cloudfoundry.org/go-metric-registry"
-	"code.cloudfoundry.org/tlsconfig/certtest"
 	"crypto/tls"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	metrics "code.cloudfoundry.org/go-metric-registry"
+	"code.cloudfoundry.org/tlsconfig/certtest"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("PrometheusMetrics", func() {
@@ -20,9 +21,9 @@ var _ = Describe("PrometheusMetrics", func() {
 	It("serves metrics on a prometheus endpoint", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
-		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}), )
+		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}))
 
-		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}), )
+		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
 
 		c.Add(10)
 		g.Set(10)
@@ -80,7 +81,7 @@ var _ = Describe("PrometheusMetrics", func() {
 				metrics.WithTLSServer(0, certFile, keyFile, caFile),
 			)
 
-			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}), )
+			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
 			g.Set(10)
 
 			Eventually(func() string {
@@ -91,6 +92,27 @@ var _ = Describe("PrometheusMetrics", func() {
 			resp, err := http.Get(addr)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+		})
+	})
+
+	Context("WithPublicServer", func() {
+		It("starts a public server", func() {
+			r := metrics.NewRegistry(
+				l,
+				metrics.WithPublicServer(0),
+			)
+
+			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
+			g.Set(10)
+
+			Eventually(func() string {
+				return getPublicMetrics(r.Port())
+			}).Should(ContainSubstring(`test_gauge{bar="baz"} 10`))
+
+			addr := fmt.Sprintf("http://0.0.0.0:%s/metrics", r.Port())
+			resp, err := http.Get(addr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		})
 	})
 })
@@ -135,6 +157,19 @@ func getMetricsTLS(port string, ca *certtest.Authority) string {
 
 	addr := fmt.Sprintf("https://127.0.0.1:%s/metrics", port)
 	resp, err := client.Get(addr)
+	if err != nil {
+		return ""
+	}
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	Expect(err).ToNot(HaveOccurred())
+
+	return string(respBytes)
+}
+
+func getPublicMetrics(port string) string {
+	addr := fmt.Sprintf("http://0.0.0.0:%s/metrics", port)
+	resp, err := http.Get(addr)
 	if err != nil {
 		return ""
 	}
