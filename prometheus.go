@@ -176,8 +176,8 @@ func (p *Registry) start(ipAddr string, port int) {
 	s := http.Server{
 		Addr:         addr,
 		Handler:      p.mux,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Minute,
+		WriteTimeout: 5 * time.Minute,
 	}
 
 	lis, err := net.Listen("tcp", addr)
@@ -208,8 +208,8 @@ func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
 		Addr:         addr,
 		Handler:      p.mux,
 		TLSConfig:    tlsConfig,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Minute,
+		WriteTimeout: 5 * time.Minute,
 	}
 
 	lis, err := tls.Listen("tcp", addr, tlsConfig)
