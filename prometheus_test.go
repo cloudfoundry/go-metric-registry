@@ -18,21 +18,35 @@ var _ = Describe("PrometheusMetrics", func() {
 		l = log.New(GinkgoWriter, "", log.LstdFlags)
 	)
 
-	It("serves metrics on a prometheus endpoint", func() {
+	It("serves and unregisters on a prometheus endpoint", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
 		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}))
-
 		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
+		h := r.NewHistogram("test_histogram", "a histogram help text for test_histogram", []float64{1.0}, metrics.WithMetricLabels(map[string]string{"aaa": "bbb"}))
 
 		c.Add(10)
 		g.Set(10)
 		g.Add(1)
+		h.Observe(0.5)
 
-		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_counter{foo="bar"} 10`))
-		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring("a counter help text for test_counter"))
-		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring(`test_gauge{bar="baz"} 11`))
-		Eventually(func() string { return getMetrics(r.Port()) }).Should(ContainSubstring("a gauge help text for test_gauge"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge{bar="baz"} 11`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a gauge help text for test_gauge"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter{foo="bar"} 10`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a counter help text for test_counter"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_bucket{aaa="bbb",le="1"} 1`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a histogram help text for test_histogram"))
+
+		r.RemoveGauge(g)
+		r.RemoveCounter(c)
+		r.RemoveHistogram(h)
+
+		Expect(getMetrics(r.Port())).ToNot(ContainSubstring(`test_gauge{bar="baz"} 11`))
+		Expect(getMetrics(r.Port())).ToNot(ContainSubstring("a gauge help text for test_gauge"))
+		Expect(getMetrics(r.Port())).ToNot(ContainSubstring(`test_counter{foo="bar"} 10`))
+		Expect(getMetrics(r.Port())).ToNot(ContainSubstring("a counter help text for test_counter"))
+		Expect(getMetrics(r.Port())).ToNot(ContainSubstring(`test_histogram_bucket{aaa="bbb",le="1"} 1`))
+		Expect(getMetrics(r.Port())).ToNot(ContainSubstring("a histogram help text for test_histogram"))
 	})
 
 	It("returns the metric when duplicate is created", func() {
@@ -44,9 +58,7 @@ var _ = Describe("PrometheusMetrics", func() {
 		c.Add(1)
 		c2.Add(2)
 
-		Eventually(func() string {
-			return getMetrics(r.Port())
-		}).Should(ContainSubstring(`test_counter 3`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter 3`))
 
 		g := r.NewGauge("test_gauge", "help text goes here")
 		g2 := r.NewGauge("test_gauge", "help text goes here")
@@ -54,9 +66,7 @@ var _ = Describe("PrometheusMetrics", func() {
 		g.Add(1)
 		g2.Add(2)
 
-		Eventually(func() string {
-			return getMetrics(r.Port())
-		}).Should(ContainSubstring(`test_gauge 3`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge 3`))
 	})
 
 	It("panics if the metric is invalid", func() {
@@ -84,9 +94,7 @@ var _ = Describe("PrometheusMetrics", func() {
 			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
 			g.Set(10)
 
-			Eventually(func() string {
-				return getMetricsTLS(r.Port(), ca)
-			}).Should(ContainSubstring(`test_gauge{bar="baz"} 10`))
+			Expect(getMetricsTLS(r.Port(), ca)).Should(ContainSubstring(`test_gauge{bar="baz"} 10`))
 
 			addr := fmt.Sprintf("http://127.0.0.1:%s/metrics", r.Port())
 			resp, err := http.Get(addr)
@@ -105,9 +113,7 @@ var _ = Describe("PrometheusMetrics", func() {
 			g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
 			g.Set(10)
 
-			Eventually(func() string {
-				return getPublicMetrics(r.Port())
-			}).Should(ContainSubstring(`test_gauge{bar="baz"} 10`))
+			Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge{bar="baz"} 10`))
 
 			addr := fmt.Sprintf("http://0.0.0.0:%s/metrics", r.Port())
 			resp, err := http.Get(addr)

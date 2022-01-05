@@ -89,6 +89,18 @@ func (p *Registry) NewHistogram(name, helpText string, buckets []float64, opts .
 	return p.registerCollector(name, h).(Histogram)
 }
 
+func (p *Registry) RemoveGauge(g Gauge) {
+	p.registerer.Unregister(g.(prometheus.Collector))
+}
+
+func (p *Registry) RemoveHistogram(h Histogram) {
+	p.registerer.Unregister(h.(prometheus.Collector))
+}
+
+func (p *Registry) RemoveCounter(c Counter) {
+	p.registerer.Unregister(c.(prometheus.Collector))
+}
+
 func (p *Registry) registerCollector(name string, c prometheus.Collector) prometheus.Collector {
 	err := p.registerer.Register(c)
 	if err != nil {
