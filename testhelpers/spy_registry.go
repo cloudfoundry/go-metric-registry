@@ -45,9 +45,25 @@ func (s *SpyMetricsRegistry) NewHistogram(name, helpText string, buckets []float
 	defer s.mu.Unlock()
 
 	m := newSpyMetric(name, helpText, opts)
+	m.buckets = buckets
 	m = s.addMetric(m)
 
 	return m
+}
+
+func (p *SpyMetricsRegistry) RemoveGauge(g metrics.Gauge) {
+	sm := g.(*SpyMetric)
+	p.removeMetric(sm)
+}
+
+func (p *SpyMetricsRegistry) RemoveHistogram(h metrics.Histogram) {
+	sm := h.(*SpyMetric)
+	p.removeMetric(sm)
+}
+
+func (p *SpyMetricsRegistry) RemoveCounter(c metrics.Counter) {
+	sm := c.(*SpyMetric)
+	p.removeMetric(sm)
 }
 
 func (s *SpyMetricsRegistry) addMetric(sm *SpyMetric) *SpyMetric {
@@ -59,6 +75,12 @@ func (s *SpyMetricsRegistry) addMetric(sm *SpyMetric) *SpyMetric {
 	}
 
 	return s.Metrics[n]
+}
+
+func (s *SpyMetricsRegistry) removeMetric(sm *SpyMetric) {
+	n := getMetricName(sm.name, sm.Opts.ConstLabels)
+
+	delete(s.Metrics, n)
 }
 
 func (s *SpyMetricsRegistry) GetMetric(name string, tags map[string]string) *SpyMetric {
@@ -99,7 +121,7 @@ func (s *SpyMetricsRegistry) HasMetric(name string, tags map[string]string) bool
 
 func newSpyMetric(name, helpText string, opts []metrics.MetricOption) *SpyMetric {
 	sm := &SpyMetric{
-		name: name,
+		name:     name,
 		helpText: helpText,
 		Opts: &prometheus.Opts{
 			ConstLabels: make(prometheus.Labels),
@@ -110,7 +132,7 @@ func newSpyMetric(name, helpText string, opts []metrics.MetricOption) *SpyMetric
 		o(sm.Opts)
 	}
 
-	for k, _ := range sm.Opts.ConstLabels {
+	for k := range sm.Opts.ConstLabels {
 		sm.keys = append(sm.keys, k)
 	}
 	sort.Strings(sm.keys)
@@ -119,13 +141,14 @@ func newSpyMetric(name, helpText string, opts []metrics.MetricOption) *SpyMetric
 }
 
 type SpyMetric struct {
-	mu    sync.Mutex
-	value float64
-	name  string
+	mu       sync.Mutex
+	value    float64
+	buckets  []float64
+	name     string
 	helpText string
 
-	keys     []string
-	Opts     *prometheus.Opts
+	keys []string
+	Opts *prometheus.Opts
 }
 
 func (s *SpyMetric) Set(c float64) {
@@ -156,6 +179,12 @@ func (s *SpyMetric) HelpText() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.helpText
+}
+
+func (s *SpyMetric) Buckets() []float64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.buckets
 }
 
 func getMetricName(name string, tags map[string]string) string {
