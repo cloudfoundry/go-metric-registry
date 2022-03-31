@@ -57,9 +57,6 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 	registry := prometheus.NewRegistry()
 	pr.registerer = registry
 
-	pr.registerer.MustRegister(prometheus.NewGoCollector())
-	pr.registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-
 	pr.mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 		Registry: pr.registerer,
 	}))
