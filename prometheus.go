@@ -63,6 +63,11 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 	return pr
 }
 
+func (p *Registry) RegisterDebugMetrics() {
+	p.registerer.MustRegister(prometheus.NewGoCollector())
+	p.registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+}
+
 // Creates new counter. When a duplicate is registered, the Registry will return
 // the previously created metric.
 func (p *Registry) NewCounter(name, helpText string, opts ...MetricOption) Counter {
