@@ -57,13 +57,15 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 	registry := prometheus.NewRegistry()
 	pr.registerer = registry
 
-	pr.registerer.MustRegister(prometheus.NewGoCollector())
-	pr.registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-
 	pr.mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 		Registry: pr.registerer,
 	}))
 	return pr
+}
+
+func (p *Registry) RegisterDebugMetrics() {
+	p.registerer.MustRegister(prometheus.NewGoCollector())
+	p.registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 }
 
 // Creates new counter. When a duplicate is registered, the Registry will return

@@ -49,6 +49,14 @@ var _ = Describe("PrometheusMetrics", func() {
 		Expect(getMetrics(r.Port())).ToNot(ContainSubstring("a histogram help text for test_histogram"))
 	})
 
+	It("can register debug metrics", func() {
+		r := metrics.NewRegistry(l, metrics.WithServer(0))
+		r.RegisterDebugMetrics()
+
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`go_memstats_alloc_bytes`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`process_cpu_seconds_total`))
+	})
+
 	It("returns the metric when duplicate is created", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
