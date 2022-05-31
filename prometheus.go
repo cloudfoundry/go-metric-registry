@@ -192,7 +192,7 @@ func (p *Registry) start(ipAddr string, port int) {
 	parts := strings.Split(lis.Addr().String(), ":")
 	p.port = parts[len(parts)-1]
 
-	go s.Serve(lis)
+	go s.Serve(lis) //nolint:errcheck
 }
 
 func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
@@ -224,7 +224,7 @@ func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
 	parts := strings.Split(lis.Addr().String(), ":")
 	p.port = parts[len(parts)-1]
 
-	go s.Serve(lis)
+	go s.Serve(lis) //nolint:errcheck
 }
 
 // Options applied to metrics on creation
