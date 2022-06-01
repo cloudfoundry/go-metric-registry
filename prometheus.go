@@ -11,6 +11,7 @@ import (
 
 	"code.cloudfoundry.org/tlsconfig"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -64,8 +65,8 @@ func NewRegistry(logger *log.Logger, opts ...RegistryOption) *Registry {
 }
 
 func (p *Registry) RegisterDebugMetrics() {
-	p.registerer.MustRegister(prometheus.NewGoCollector())
-	p.registerer.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	p.registerer.MustRegister(collectors.NewGoCollector())
+	p.registerer.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 }
 
 // Creates new counter. When a duplicate is registered, the Registry will return
@@ -191,7 +192,7 @@ func (p *Registry) start(ipAddr string, port int) {
 	parts := strings.Split(lis.Addr().String(), ":")
 	p.port = parts[len(parts)-1]
 
-	go s.Serve(lis)
+	go s.Serve(lis) //nolint:errcheck
 }
 
 func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
@@ -223,7 +224,7 @@ func (p *Registry) startTLS(port int, certFile, keyFile, caFile string) {
 	parts := strings.Split(lis.Addr().String(), ":")
 	p.port = parts[len(parts)-1]
 
-	go s.Serve(lis)
+	go s.Serve(lis) //nolint:errcheck
 }
 
 // Options applied to metrics on creation

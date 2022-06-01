@@ -105,7 +105,7 @@ var _ = Describe("PrometheusMetrics", func() {
 			Expect(getMetricsTLS(r.Port(), ca)).Should(ContainSubstring(`test_gauge{bar="baz"} 10`))
 
 			addr := fmt.Sprintf("http://127.0.0.1:%s/metrics", r.Port())
-			resp, err := http.Get(addr)
+			resp, err := http.Get(addr) //nolint:gosec
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 		})
@@ -124,7 +124,7 @@ var _ = Describe("PrometheusMetrics", func() {
 			Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge{bar="baz"} 10`))
 
 			addr := fmt.Sprintf("http://0.0.0.0:%s/metrics", r.Port())
-			resp, err := http.Get(addr)
+			resp, err := http.Get(addr) //nolint:gosec
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		})
@@ -133,7 +133,7 @@ var _ = Describe("PrometheusMetrics", func() {
 
 func getMetrics(port string) string {
 	addr := fmt.Sprintf("http://127.0.0.1:%s/metrics", port)
-	resp, err := http.Get(addr)
+	resp, err := http.Get(addr) //nolint:gosec
 	if err != nil {
 		return ""
 	}
@@ -162,7 +162,7 @@ func getMetricsTLS(port string, ca *certtest.Authority) string {
 
 	client := &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
+			TLSClientConfig: &tls.Config{ //nolint:gosec
 				Certificates: []tls.Certificate{tlsCert},
 				RootCAs:      caPool,
 			},
@@ -171,19 +171,6 @@ func getMetricsTLS(port string, ca *certtest.Authority) string {
 
 	addr := fmt.Sprintf("https://127.0.0.1:%s/metrics", port)
 	resp, err := client.Get(addr)
-	if err != nil {
-		return ""
-	}
-
-	respBytes, err := ioutil.ReadAll(resp.Body)
-	Expect(err).ToNot(HaveOccurred())
-
-	return string(respBytes)
-}
-
-func getPublicMetrics(port string) string {
-	addr := fmt.Sprintf("http://0.0.0.0:%s/metrics", port)
-	resp, err := http.Get(addr)
 	if err != nil {
 		return ""
 	}
