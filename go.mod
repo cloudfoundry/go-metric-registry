@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/go-metric-registry
 
-go 1.18
+go 1.19
 
 require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
