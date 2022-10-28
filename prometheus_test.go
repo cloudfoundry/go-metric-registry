@@ -3,9 +3,10 @@ package metrics_test
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"os"
 
 	metrics "code.cloudfoundry.org/go-metric-registry"
 	"code.cloudfoundry.org/tlsconfig/certtest"
@@ -138,7 +139,7 @@ func getMetrics(port string) string {
 		return ""
 	}
 
-	respBytes, err := ioutil.ReadAll(resp.Body)
+	respBytes, err := io.ReadAll(resp.Body)
 	Expect(err).ToNot(HaveOccurred())
 
 	return string(respBytes)
@@ -175,7 +176,7 @@ func getMetricsTLS(port string, ca *certtest.Authority) string {
 		return ""
 	}
 
-	respBytes, err := ioutil.ReadAll(resp.Body)
+	respBytes, err := io.ReadAll(resp.Body)
 	Expect(err).ToNot(HaveOccurred())
 
 	return string(respBytes)
@@ -198,7 +199,7 @@ func generateCA(caName string) (*certtest.Authority, string) {
 }
 
 func tmpFile(prefix string, caBytes []byte) string {
-	file, err := ioutil.TempFile("", prefix)
+	file, err := os.CreateTemp("", prefix)
 	if err != nil {
 		log.Fatal(err)
 	}
