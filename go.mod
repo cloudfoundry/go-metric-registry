@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.8
 
 require (
-	code.cloudfoundry.org/tlsconfig v0.8.0
+	code.cloudfoundry.org/tlsconfig v0.10.0
 	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/onsi/gomega v1.35.1
 	github.com/prometheus/client_golang v1.20.5
@@ -27,11 +27,11 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
-	go.step.sm/crypto v0.54.0 // indirect
-	golang.org/x/crypto v0.28.0 // indirect
+	go.step.sm/crypto v0.54.2 // indirect
+	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
