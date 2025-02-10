@@ -12,7 +12,13 @@ import (
 	"code.cloudfoundry.org/tlsconfig/certtest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
+
+func init() {
+	// Prometheus output is long, disable diff truncation.
+	format.MaxLength = 0
+}
 
 var _ = Describe("PrometheusMetrics", func() {
 	var (
@@ -23,24 +29,43 @@ var _ = Describe("PrometheusMetrics", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
 		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}))
+		cv := r.NewCounterVec("test_counter_vector", "a counter vector to test", []string{"a", "b"})
 		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
 		h := r.NewHistogram("test_histogram", "a histogram help text for test_histogram", []float64{1.0}, metrics.WithMetricLabels(map[string]string{"aaa": "bbb"}))
+		hv := r.NewHistogramVec("test_histogram_vector", "a histogram vector to test", []string{"x", "y"}, []float64{1.0, 2.0})
 
 		c.Add(10)
+		cv.Add(1, []string{"1", "2"})
+		cv.Add(2, []string{"2", "1"})
 		g.Set(10)
 		g.Add(1)
 		h.Observe(0.5)
+		hv.Observe(1, []string{"11", "22"})
+		hv.Observe(2, []string{"2", "1"})
 
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge{bar="baz"} 11`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a gauge help text for test_gauge"))
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter{foo="bar"} 10`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a counter help text for test_counter"))
+
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter_vector{a="1",b="2"} 1`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a counter vector to test"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter_vector{a="2",b="1"} 2`))
+
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_bucket{aaa="bbb",le="1"} 1`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a histogram help text for test_histogram"))
 
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_vector_bucket{x="11",y="22",le="1"} 1`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_vector_bucket{x="11",y="22",le="2"} 1`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a histogram vector to test"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_vector_bucket{x="2",y="1",le="1"} 0`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_vector_bucket{x="2",y="1",le="2"} 1`))
+
 		r.RemoveGauge(g)
 		r.RemoveCounter(c)
+		r.RemoveCounterVec(cv)
 		r.RemoveHistogram(h)
+		r.RemoveHistogramVec(hv)
 
 		Expect(getMetrics(r.Port())).ToNot(ContainSubstring(`test_gauge{bar="baz"} 11`))
 		Expect(getMetrics(r.Port())).ToNot(ContainSubstring("a gauge help text for test_gauge"))
