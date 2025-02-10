@@ -30,6 +30,23 @@ type Counter interface {
 	Add(float64)
 }
 
+// counterVec allows us to hide the prometheus logic from the user. [prometheus.CounterVec] is not
+// an actual metric but more of a metric factory which returns a metric for each set of labels.
+// To not leak the returned prometheus types, this type is used.
+type counterVec struct {
+	vec *prometheus.CounterVec
+}
+
+func (c counterVec) Add(f float64, labels []string) {
+	c.vec.WithLabelValues(labels...).Add(f)
+}
+
+type CounterVec interface {
+	// Add to metric, the number of labels must match the number of label names that were
+	// given when the [CounterVec] was created.
+	Add(float64, []string)
+}
+
 // A single numerical value that can arbitrarily go up and down.
 type Gauge interface {
 	Add(float64)
@@ -75,6 +92,15 @@ func (p *Registry) NewCounter(name, helpText string, opts ...MetricOption) Count
 	opt := toPromOpt(name, helpText, opts...)
 	c := prometheus.NewCounter(prometheus.CounterOpts(opt))
 	return p.registerCollector(name, c).(Counter)
+}
+
+// Creates new counter vector. When a duplicate is registered, the Registry will return
+// the previously created metric.
+func (p *Registry) NewCounterVec(name, helpText string, labelNames []string, opts ...MetricOption) CounterVec {
+	opt := toPromOpt(name, helpText, opts...)
+	c := prometheus.NewCounterVec(prometheus.CounterOpts(opt), labelNames)
+	// See [counterVec] for details.
+	return counterVec{vec: p.registerCollector(name, c).(*prometheus.CounterVec)}
 }
 
 // Creates new gauge. When a duplicate is registered, the Registry will return
