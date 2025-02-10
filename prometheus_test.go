@@ -7,11 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	metrics "code.cloudfoundry.org/go-metric-registry"
 	"code.cloudfoundry.org/tlsconfig/certtest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 var _ = Describe("PrometheusMetrics", func() {
@@ -23,10 +25,13 @@ var _ = Describe("PrometheusMetrics", func() {
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 
 		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}))
+		cv := r.NewCounterVec("test_counter_vector", "a counter vector to test", []string{"a", "b"})
 		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
 		h := r.NewHistogram("test_histogram", "a histogram help text for test_histogram", []float64{1.0}, metrics.WithMetricLabels(map[string]string{"aaa": "bbb"}))
 
 		c.Add(10)
+		cv.Add(1, []string{"1", "2"})
+		cv.Add(2, []string{"2", "1"})
 		g.Set(10)
 		g.Add(1)
 		h.Observe(0.5)
@@ -35,6 +40,11 @@ var _ = Describe("PrometheusMetrics", func() {
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a gauge help text for test_gauge"))
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter{foo="bar"} 10`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a counter help text for test_counter"))
+
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter_vector{a="1",b="2"} 1`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a counter vector to test"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter_vector{a="2",b="1"} 2`))
+
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_bucket{aaa="bbb",le="1"} 1`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a histogram help text for test_histogram"))
 
@@ -51,8 +61,11 @@ var _ = Describe("PrometheusMetrics", func() {
 	})
 
 	It("can register debug metrics", func() {
+		format.MaxLength = 0
 		r := metrics.NewRegistry(l, metrics.WithServer(0))
 		r.RegisterDebugMetrics()
+
+		time.Sleep(5 * time.Second)
 
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`go_memstats_alloc_bytes`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`process_cpu_seconds_total`))
