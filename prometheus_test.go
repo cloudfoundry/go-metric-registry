@@ -107,11 +107,11 @@ var _ = Describe("PrometheusMetrics", func() {
 		r := metrics.NewRegistry(l)
 
 		Expect(func() {
-			r.NewCounter("test-counter", "help text goes here")
+			r.NewCounter("test-a\xc5zcounter", "help text goes here")
 		}).To(Panic())
 
 		Expect(func() {
-			r.NewGauge("test-counter", "help text goes here")
+			r.NewGauge("test-a\xc5zcounter", "help text goes here")
 		}).To(Panic())
 	})
 
