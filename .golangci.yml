@@ -19,7 +19,7 @@ linters:
       - builtin$
       - examples$
 issues:
-# Disable max issues per linter.
+  # Disable max issues per linter.
   max-issues-per-linter: 0
   # Disable max same issues.
   max-same-issues: 0
