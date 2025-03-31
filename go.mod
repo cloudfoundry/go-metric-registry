@@ -2,10 +2,10 @@ module code.cloudfoundry.org/go-metric-registry
 
 go 1.23.0
 
-toolchain go1.23.6
+toolchain go1.24.1
 
 require (
-	code.cloudfoundry.org/tlsconfig v0.21.0
+	code.cloudfoundry.org/tlsconfig v0.22.0
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/onsi/gomega v1.36.3
 	github.com/prometheus/client_golang v1.21.1
@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
-	go.step.sm/crypto v0.59.1 // indirect
+	go.step.sm/crypto v0.59.2 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
