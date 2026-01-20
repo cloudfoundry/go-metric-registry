@@ -31,6 +31,7 @@ var _ = Describe("PrometheusMetrics", func() {
 		c := r.NewCounter("test_counter", "a counter help text for test_counter", metrics.WithMetricLabels(map[string]string{"foo": "bar"}))
 		cv := r.NewCounterVec("test_counter_vector", "a counter vector to test", []string{"a", "b"})
 		g := r.NewGauge("test_gauge", "a gauge help text for test_gauge", metrics.WithMetricLabels(map[string]string{"bar": "baz"}))
+		gv := r.NewGaugeVec("test_gauge_vector", "a gauge vector to test", []string{"user", "operationType"}, metrics.WithMetricLabels(map[string]string{"name": "opsQueued"}))
 		h := r.NewHistogram("test_histogram", "a histogram help text for test_histogram", []float64{1.0}, metrics.WithMetricLabels(map[string]string{"aaa": "bbb"}))
 		hv := r.NewHistogramVec("test_histogram_vector", "a histogram vector to test", []string{"x", "y"}, []float64{1.0, 2.0})
 
@@ -39,6 +40,8 @@ var _ = Describe("PrometheusMetrics", func() {
 		cv.Add(2, []string{"2", "1"})
 		g.Set(10)
 		g.Add(1)
+		gv.Add(1.27, []string{"alex", "add"})
+		gv.Add(35.59111, []string{"soha", "delete"})
 		h.Observe(0.5)
 		hv.Observe(1, []string{"11", "22"})
 		hv.Observe(2, []string{"2", "1"})
@@ -52,6 +55,10 @@ var _ = Describe("PrometheusMetrics", func() {
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a counter vector to test"))
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_counter_vector{a="2",b="1"} 2`))
 
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge_vector{name="opsQueued",operationType="add",user="alex"} 1.27`))
+		Expect(getMetrics(r.Port())).To(ContainSubstring("a gauge vector to test"))
+		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge_vector{name="opsQueued",operationType="delete",user="soha"} 35.59111`))
+
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_bucket{aaa="bbb",le="1"} 1`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a histogram help text for test_histogram"))
 
@@ -62,6 +69,7 @@ var _ = Describe("PrometheusMetrics", func() {
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_vector_bucket{x="2",y="1",le="2"} 1`))
 
 		r.RemoveGauge(g)
+		r.RemoveGaugeVec(gv)
 		r.RemoveCounter(c)
 		r.RemoveCounterVec(cv)
 		r.RemoveHistogram(h)
