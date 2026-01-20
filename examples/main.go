@@ -21,12 +21,15 @@ func main() {
 	cntr := registry.NewCounter("counter_name", "This is an example counter. Use this area to give a useful description about your counter.")
 	cntrVec := registry.NewCounterVec("counter_vector_name", "This is an example counter vector. Use this area to give a useful description about your counter vector.", []string{"status", "app"})
 	gauge := registry.NewGauge("gauge_name", "This is an example gauge. Use this area to give a useful description about your gauge.")
+	gaugeVec := registry.NewGaugeVec("gauge_vector_name", "This is an example gauge vector. Use this area to give a useful description about your gauge vector.", []string{"state", "source"})
 	hist := registry.NewHistogram("histogram_name", "This is an example histogram. Use this area to give a useful description about your histogram.", []float64{1.0})
 	histVec := registry.NewHistogramVec("histogram_vector_name", "This is an example histogram vector. Use this area to give a useful description about your histogram vector.", []string{"mode"}, []float64{10, 50, 100})
 
 	cntr.Add(10)
 	cntrVec.Add(0.25, []string{"success", "IntranetPortal"}) // Define label names when you initialize the vector and label values here, when you add new value to it
 	gauge.Set(38)
+	gaugeVec.Set(12.5, []string{"active", "MobileApp"})
+	gaugeVec.Add(0.5, []string{"active", "MobileApp"}) // Define label names when you initialize the vector and label values here, when you add new value to it
 	hist.Observe(98.01234)
 	histVec.Observe(67, []string{"detached"}) // Define label names when you initialize the vector and label values here, when you add new value to it
 
