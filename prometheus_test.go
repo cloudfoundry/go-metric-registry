@@ -42,6 +42,8 @@ var _ = Describe("PrometheusMetrics", func() {
 		g.Add(1)
 		gv.Add(1.27, []string{"alex", "add"})
 		gv.Add(35.59111, []string{"soha", "delete"})
+		gv.Add(1.1, []string{"X", "delete"})
+		gv.Delete([]string{"X", "delete"})
 		h.Observe(0.5)
 		hv.Observe(1, []string{"11", "22"})
 		hv.Observe(2, []string{"2", "1"})
@@ -58,6 +60,7 @@ var _ = Describe("PrometheusMetrics", func() {
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge_vector{name="opsQueued",operationType="add",user="alex"} 1.27`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a gauge vector to test"))
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_gauge_vector{name="opsQueued",operationType="delete",user="soha"} 35.59111`))
+		Expect(getMetrics(r.Port())).NotTo(ContainSubstring(`test_gauge_vector{name="opsQueued",operationType="add",user="X"} 1.1`))
 
 		Expect(getMetrics(r.Port())).To(ContainSubstring(`test_histogram_bucket{aaa="bbb",le="1"} 1`))
 		Expect(getMetrics(r.Port())).To(ContainSubstring("a histogram help text for test_histogram"))
