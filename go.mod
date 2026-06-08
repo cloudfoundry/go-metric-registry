@@ -3,7 +3,7 @@ module code.cloudfoundry.org/go-metric-registry
 go 1.25.1
 
 require (
-	code.cloudfoundry.org/tlsconfig v0.57.0
+	code.cloudfoundry.org/tlsconfig v0.58.0
 	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0
 	github.com/prometheus/client_golang v1.23.2
